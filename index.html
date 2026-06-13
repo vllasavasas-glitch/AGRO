@@ -1,39 +1,26 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>AgroMap</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <style>
-        body, html { margin:0; padding:0; height:100%; }
-        #map { height: 80vh; width: 100vw; }
-        .controls { height: 20vh; padding: 10px; background: #fff; }
-    </style>
 </head>
 <body>
-    <div class="controls">
-        <input type="text" id="name" placeholder="Название нового поля" style="width:90%; padding:8px;">
-        <br>
-        <button onclick="save()" style="padding:10px; margin-top:5px; background:green; color:white; border:none; width:100%;">💾 Сохранить поле</button>
-    </div>
-    <div id="map"></div>
+    <div id="map" style="height:80vh;"></div>
     <script>
         const map = L.map('map').setView([47.5746, 34.4396], 15);
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        let pts = [];
-        let poly = L.polygon([], {color: 'yellow'}).addTo(map);
-        map.on('click', (e) => {
-            pts.push([e.latlng.lat, e.latlng.lng]);
-            poly.setLatLngs(pts);
-        });
+        const urlParams = new URLSearchParams(window.location.search);
+        const fieldId = urlParams.get('id');
 
-        function save() {
-            const name = document.getElementById('name').value;
-            if(!name || pts.length < 3) return alert('Введите имя и 3+ точки!');
-            window.Telegram.WebApp.sendData(JSON.stringify({action: 'add', name: name, pts: pts}));
+        if (fieldId !== null) {
+            alert("Загружаю данные поля №" + (parseInt(fieldId) + 1));
+            // Здесь будет логика отображения точек этого поля
+        }
+
+        function save(name, pts) {
+            window.Telegram.WebApp.sendData(JSON.stringify({name: name, pts: pts}));
             window.Telegram.WebApp.close();
         }
     </script>
