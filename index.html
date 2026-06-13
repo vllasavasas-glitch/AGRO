@@ -1,25 +1,59 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroMap</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; }
+        #map { height: 85vh; width: 100vw; }
+        .controls { height: 15vh; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+    </style>
 </head>
 <body>
-    <div id="map" style="height:80vh;"></div>
+
+    <div class="controls">
+        <input type="text" id="name" placeholder="Название поля" style="padding: 10px;">
+        <button onclick="save()" style="padding: 10px; background: green; color: white; border: none;">Сохранить поле</button>
+    </div>
+    <div id="map"></div>
+
     <script>
         const map = L.map('map').setView([47.5746, 34.4396], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const fieldId = urlParams.get('id');
+        let pts = [];
+        let poly = L.polygon([], {color: 'red'}).addTo(map);
 
-        if (fieldId !== null) {
-            alert("Загружаю данные поля №" + (parseInt(fieldId) + 1));
-            // Здесь будет логика отображения точек этого поля
+        // Обработка клика по карте для создания точек
+        map.on('click', (e) => {
+            pts.push([e.latlng.lat, e.latlng.lng]);
+            poly.setLatLngs(pts);
+        });
+
+        // Загрузка поля из ссылки, если оно выбрано
+        const urlParams = new URLSearchParams(window.location.search);
+        const dataRaw = urlParams.get('data');
+
+        if (dataRaw) {
+            try {
+                // Преобразуем данные обратно в объект
+                const field = JSON.parse(dataRaw.replace(/'/g, '"'));
+                poly.setLatLngs(field.pts);
+                map.fitBounds(poly.getBounds());
+                document.getElementById('name').value = field.name;
+            } catch (e) {
+                console.error("Ошибка загрузки данных поля");
+            }
         }
 
-        function save(name, pts) {
+        // Функция отправки данных в бота
+        function save() {
+            const name = document.getElementById('name').value;
+            if (!name || pts.length < 3) return alert('Введите название и точки!');
             window.Telegram.WebApp.sendData(JSON.stringify({name: name, pts: pts}));
             window.Telegram.WebApp.close();
         }
